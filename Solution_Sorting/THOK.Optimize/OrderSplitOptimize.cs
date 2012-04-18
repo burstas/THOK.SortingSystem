@@ -19,8 +19,8 @@ namespace THOK.Optimize
         private bool isOneChannelMoveToMixChannel = false;
         private bool isTwoChannelMoveToMixChannel = false;
         private int moveToMixChannelProductsCount = 0;
-        public IList<string> moveToMixChannelProducts = new List<string>();
-
+        //public IList<string> moveToMixChannelProducts = new List<string>();
+        public IDictionary<string,int> moveToMixChannelProducts = new Dictionary<string,int>();
         
         
         private bool isCombineOrder = false;
@@ -254,7 +254,7 @@ namespace THOK.Optimize
                 DataRow[] channelRows1 = channelTable.Select(string.Format("STATUS = '1' AND CIGARETTECODE = '' AND CHANNELTYPE = '{0}'", "2"));
                 DataRow[] channelRows2 = channelTable.Select(string.Format("STATUS = '1' AND CHANNELTYPE = '{0}'", "5"));
 
-                if (channelRows1.Length > 0 || (channelRows2.Length > 0 && isOneChannelMoveToMixChannel && ( moveToMixChannelProducts.Contains(cigaretteCode) || moveToMixChannelProducts.Count < moveToMixChannelProductsCount)))
+                if (channelRows1.Length > 0 || (channelRows2.Length > 0 && isOneChannelMoveToMixChannel && ( moveToMixChannelProducts.ContainsKey(cigaretteCode) || moveToMixChannelProducts.Count < moveToMixChannelProductsCount)))
                 {
                     if (quantity1 > 0)
                     {                        
@@ -279,6 +279,7 @@ namespace THOK.Optimize
                         else
                         {
                             int channelQuantityTotal = Convert.ToInt32(channelTable.Compute("SUM(QUANTITY)", string.Format("STATUS = '1' AND CIGARETTECODE='{0}'", cigaretteCode)));
+                            channelQuantityTotal += moveToMixChannelProducts.ContainsKey(cigaretteCode) ? moveToMixChannelProducts[cigaretteCode] : 0;
                             bool isLastNoMove = Convert.ToInt32(channelRows[0]["GROUPNO"]) - channelQuantityTotal - quantity2 <= noMoveTixChannelQuantity;
                             if (isLastNoMove)
                             {
@@ -295,20 +296,24 @@ namespace THOK.Optimize
                             }
 
                             //移仓到混合烟道
-                            if (!moveToMixChannelProducts.Contains(cigaretteCode))
+                            if (quantity2 > 0)
                             {
-                                moveToMixChannelProducts.Add(cigaretteCode);
+                                if (!moveToMixChannelProducts.ContainsKey(cigaretteCode))
+                                {
+                                    moveToMixChannelProducts.Add(cigaretteCode, 0);
+                                }
+
+                                channelRows2[0]["CIGARETTECODE"] = cigaretteCode;
+                                channelRows2[0]["CIGARETTENAME"] = channelRows[0]["CIGARETTENAME"];
+                                AddDetailRow(masterRow, detailTable, -1, lineCode, channelRows2[0], quantity2);
+                                channelRows2[0]["CIGARETTECODE"] = "";
+                                channelRows2[0]["CIGARETTENAME"] = channelRows2[0]["CHANNELNAME"];
+
+                                channelGroup = Convert.ToInt32(channelRows2[0]["CHANNELGROUP"]);
+                                groupQuantity[channelGroup - 1] += quantity2;
+
+                                moveToMixChannelProducts[cigaretteCode] += quantity2;
                             }
-
-                            channelRows2[0]["CIGARETTECODE"] = cigaretteCode;
-                            channelRows2[0]["CIGARETTENAME"] = channelRows[0]["CIGARETTENAME"];
-                            AddDetailRow(masterRow, detailTable, -1, lineCode, channelRows2[0], quantity2);
-                            channelRows2[0]["CIGARETTECODE"] = "";
-                            channelRows2[0]["CIGARETTENAME"] = channelRows2[0]["CHANNELNAME"];
-
-                            channelGroup = Convert.ToInt32(channelRows2[0]["CHANNELGROUP"]);
-                            groupQuantity[channelGroup - 1] += quantity2;
-
                         }
                     }
                 }
@@ -381,6 +386,7 @@ namespace THOK.Optimize
                 }
 
                 //移仓到混合烟道(部份不移仓)
+                channelQuantityTotal += moveToMixChannelProducts.ContainsKey(cigaretteCode) ? moveToMixChannelProducts[cigaretteCode] : 0;
                 DataRow[] channelRows2 = channelTable.Select(string.Format("STATUS = '1' AND CHANNELTYPE = '{0}'", "5"));
                 bool isLastNoMove = Convert.ToInt32(channelRows[0]["GROUPNO"]) - channelQuantityTotal - OrderQuantityTotal <= noMoveTixChannelQuantity;
                 if (isLastNoMove)
@@ -398,11 +404,11 @@ namespace THOK.Optimize
                     }
                 }
                 //移仓到混合烟道
-                if (OrderQuantityTotal > 0 && isTwoChannelMoveToMixChannel && channelRows[0]["CHANNELTYPE"].ToString() == "3" && channelRows2.Length > 0 && (moveToMixChannelProducts.Contains(cigaretteCode) || moveToMixChannelProducts.Count < moveToMixChannelProductsCount))
+                if (OrderQuantityTotal > 0 && isTwoChannelMoveToMixChannel && channelRows[0]["CHANNELTYPE"].ToString() == "3" && channelRows2.Length > 0 && (moveToMixChannelProducts.ContainsKey(cigaretteCode) || moveToMixChannelProducts.Count < moveToMixChannelProductsCount))
                 {
-                    if (!moveToMixChannelProducts.Contains(cigaretteCode))
+                    if (!moveToMixChannelProducts.ContainsKey(cigaretteCode))
                     {
-                        moveToMixChannelProducts.Add(cigaretteCode);
+                        moveToMixChannelProducts.Add(cigaretteCode,0);
                     }
 
                     channelRows2[0]["CIGARETTECODE"] = cigaretteCode;
@@ -413,6 +419,8 @@ namespace THOK.Optimize
 
                     int channelGroup2 = Convert.ToInt32(channelRows2[0]["CHANNELGROUP"]);
                     groupQuantity[channelGroup2 - 1] += OrderQuantityTotal;
+
+                    moveToMixChannelProducts[cigaretteCode] += OrderQuantityTotal;
                 }
                 else if (OrderQuantityTotal > 0)
                 {
@@ -755,6 +763,7 @@ namespace THOK.Optimize
             table.Columns.Add("EXPORTNO1", typeof(Int32));
             table.Columns.Add("PACKNO", typeof(Int32));
             table.Columns.Add("PACKNO1", typeof(Int32));
+            table.Columns.Add("PACKORDERNO", typeof(Int32));
             return table;
         }
 
