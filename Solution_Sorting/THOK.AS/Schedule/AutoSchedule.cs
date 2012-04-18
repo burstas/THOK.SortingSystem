@@ -611,7 +611,7 @@ namespace THOK.AS.Schedule
 
                     DataTable channelTable = channelDao.FindChannelSchedule(orderDate, batchNo, lineCode, Convert.ToInt32(parameter["RemainCount"])).Tables[0];
                     DataTable supplyTable = supplyOptimize.Optimize(channelTable);
-                    supplyDao.InsertSupply(supplyTable,false);
+                    supplyDao.InsertSupply(supplyTable, Convert.ToBoolean(parameter["IsSupplyOrderbyCigaretteCode"]));
 
                     if (OnSchedule != null)
                         OnSchedule(this, new ScheduleEventArgs(7, "正在优化" + lineRow["LINECODE"].ToString() + "补货计划", currentCount++, totalCount));
