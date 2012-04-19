@@ -61,46 +61,62 @@ namespace THOK.AS.Dao
             string sql = "SELECT *, 50 REMAINQUANTITY,CASE WHEN CHANNELTYPE='3' THEN QUANTITY / 50 - 3 ELSE QUANTITY / 50 - 1 END PIECE " +
                 "FROM AS_SC_CHANNELUSED WHERE LINECODE = '{0}' AND BATCHNO = '{1}' AND ORDERDATE = '{2}' ORDER BY CHANNELORDER";
 
-            sql = "SELECT A.*,D.CIGARETTECODE  AS D_CIGARETTECODE,"+
-                    " 	CASE WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 16 " +
-                    " 		    THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 - 16" +
-                    "       WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 16 " +
-                    " 		    THEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 16" +
-                    " 		ELSE 50 + (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 + (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 16" +
-                    " 	END REMAINQUANTITY, " +
-                    " 	CASE WHEN A.CHANNELTYPE='3' " +
-                    " 		THEN " +
-                    " 	        CASE WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 16 " +
-                    " 		            THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - {3} " +
-                    "               WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 16 " +
-                    " 		            THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - {3} " +
-                    " 		        ELSE (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - ({3} + 1 ) " +
-                    " 	        END " +
-                    " 		ELSE (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - 1 " +
-                    " 	END PIECE, " +
-                    "   ISNULL(C.QUANTITY,0) AS BALANCE, "+
-                    "   (A.QUANTITY + ISNULL(B.QUANTITY,0)) AS SUPPLYQUANTITY" +
-                    " FROM AS_SC_CHANNELUSED A" +
-                    " LEFT JOIN (SELECT CHANNELID,LINECODE,CHANNELCODE,CHANNELNAME," +
-                    " 	CIGARETTECODE,CIGARETTENAME,SUM(QUANTITY) AS QUANTITY " +
-                    " 	FROM AS_SC_BALANCE" +
-                    " 	WHERE LINECODE = '{0}' " +
-                    " 	AND BATCHNO = '{1}' " +
-                    " 	AND ORDERDATE = '{2}' " +
-                    " 	GROUP BY CHANNELID,LINECODE,CHANNELCODE,CHANNELNAME," +
-                    " 	CIGARETTECODE,CIGARETTENAME) B " +
-                    " ON A.CHANNELID = B.CHANNELID" +
-                    " LEFT JOIN (SELECT CHANNELID,LINECODE,CHANNELCODE,CHANNELNAME," +
-                    " 	CIGARETTECODE,CIGARETTENAME,SUM(QUANTITY) AS QUANTITY " +
-                    " 	FROM AS_SC_BALANCE " +
-                    " 	GROUP BY CHANNELID,LINECODE,CHANNELCODE,CHANNELNAME," +
-                    " 	CIGARETTECODE,CIGARETTENAME) C" +
-                    " ON A.CHANNELID = C.CHANNELID" +
-                    " LEFT JOIN AS_BI_CHANNEL D ON A.CHANNELID = D.CHANNELID " +
-                    " WHERE A.LINECODE = '{0}' " +
-                    " AND A.BATCHNO = '{1}' " +
-                    " AND A.ORDERDATE = '{2}' " +
-                    " ORDER BY A.CHANNELORDER";
+            sql = @"SELECT A.*,D.CIGARETTECODE  AS D_CIGARETTECODE,
+	                CASE WHEN A.CHANNELTYPE='3' 
+	                THEN
+		                CASE WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 16 
+				                THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 - 16
+			                WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 16 
+				                THEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 16
+		                ELSE 50 + (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 + (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 16
+		                END 
+	                ELSE 
+		                CASE WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 25 
+				                THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 - 25
+			                WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 25 
+				                THEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 25
+			                ELSE 50 + (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 + (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 25
+		                END
+	                END REMAINQUANTITY, 
+	                CASE WHEN A.CHANNELTYPE='3' 
+		                THEN 
+			                CASE WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 16 
+					                THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - {3} 
+				                WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 16 
+					                THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - {3} 
+			                ELSE (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - ({3} + 1 ) 
+			                END 
+	                ELSE 
+			                CASE WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 25 
+					                THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - 0 
+				                WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 25 
+					                THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - 0 
+			                ELSE (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - (0 + 1 ) 
+			                END 
+	                END PIECE, 
+	                ISNULL(C.QUANTITY,0) AS BALANCE, 
+	                (A.QUANTITY + ISNULL(B.QUANTITY,0)) AS SUPPLYQUANTITY
+	                FROM AS_SC_CHANNELUSED A
+	                LEFT JOIN (SELECT CHANNELID,LINECODE,CHANNELCODE,CHANNELNAME,
+		                CIGARETTECODE,CIGARETTENAME,SUM(QUANTITY) AS QUANTITY 
+		                FROM AS_SC_BALANCE
+		                WHERE LINECODE = '{0}' 
+		                AND BATCHNO = '{1}' 
+		                AND ORDERDATE = '{2}' 
+		                GROUP BY CHANNELID,LINECODE,CHANNELCODE,CHANNELNAME,
+		                CIGARETTECODE,CIGARETTENAME) B 
+	                ON A.CHANNELID = B.CHANNELID
+	                LEFT JOIN (SELECT CHANNELID,LINECODE,CHANNELCODE,CHANNELNAME,
+		                CIGARETTECODE,CIGARETTENAME,SUM(QUANTITY) AS QUANTITY 
+		                FROM AS_SC_BALANCE 
+		                GROUP BY CHANNELID,LINECODE,CHANNELCODE,CHANNELNAME,
+		                CIGARETTECODE,CIGARETTENAME) C
+	                ON A.CHANNELID = C.CHANNELID
+	                LEFT JOIN AS_BI_CHANNEL D ON A.CHANNELID = D.CHANNELID 
+	                WHERE A.LINECODE = '{0}' 
+		                AND A.BATCHNO = '{1}' 
+		                AND A.ORDERDATE = '{2}' 
+	                ORDER BY A.CHANNELORDER";
             return ExecuteQuery(string.Format(sql, lineCode, batchNo, orderDate,remainCount));
         }
 
