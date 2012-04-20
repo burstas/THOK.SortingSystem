@@ -62,37 +62,44 @@ namespace THOK.AS.Dao
                 "FROM AS_SC_CHANNELUSED WHERE LINECODE = '{0}' AND BATCHNO = '{1}' AND ORDERDATE = '{2}' ORDER BY CHANNELORDER";
 
             sql = @"SELECT A.*,D.CIGARETTECODE  AS D_CIGARETTECODE,
-	                CASE WHEN A.CHANNELTYPE='3' 
-	                THEN
-		                CASE WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 16 
-				                THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 - 16
-			                WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 16 
-				                THEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 16
-		                ELSE 50 + (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 + (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 16
-		                END 
-	                ELSE 
-		                CASE WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 25 
-				                THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 - 25
-			                WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 25 
-				                THEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 25
-			                ELSE 50 + (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 + (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 25
-		                END
+	                CASE 
+	                    WHEN A.CHANNELTYPE='2' THEN
+		                    CASE 
+                                WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 25 THEN
+				                     (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 - 25
+			                    WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 25 THEN
+				                     (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 25
+			                    ELSE 50 + (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 + (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 25
+		                    END
+                        WHEN A.CHANNELTYPE='3' THEN
+		                    CASE 
+                                WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 16 THEN
+				                    (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 - 16
+			                    WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 16 THEN
+				                    (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 16
+		                        ELSE 50 + (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 + (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) - 16
+		                    END 
+                        WHEN A.CHANNELTYPE='4' THEN 1
+                        ELSE 0
 	                END REMAINQUANTITY, 
-	                CASE WHEN A.CHANNELTYPE='3' 
-		                THEN 
-			                CASE WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 16 
-					                THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - {3} 
-				                WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 16 
-					                THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - {3} 
-			                ELSE (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - ({3} + 1 ) 
+	                CASE 
+                        WHEN A.CHANNELTYPE='2' THEN
+			                CASE 
+                                WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 25 THEN
+					                (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - 0 
+				                WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 25 THEN
+					                (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - 0 
+			                    ELSE (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - (0 + 1 ) 
 			                END 
-	                ELSE 
-			                CASE WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 25 
-					                THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - 0 
-				                WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 25 
-					                THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - 0 
-			                ELSE (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - (0 + 1 ) 
+                        WHEN A.CHANNELTYPE='3' THEN 
+			                CASE WHEN (A.QUANTITY + ISNULL(B.QUANTITY,0))%50 > 16  THEN
+					                (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - {3} 
+				                WHEN (ISNULL(C.QUANTITY,0) - ISNULL(B.QUANTITY,0)) > 16 THEN
+					                (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - {3} 
+			                    ELSE (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50 - ({3} + 1 ) 
 			                END 
+                        WHEN A.CHANNELTYPE='4' THEN (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50
+	                    ELSE (A.QUANTITY + ISNULL(B.QUANTITY,0))/ 50
 	                END PIECE, 
 	                ISNULL(C.QUANTITY,0) AS BALANCE, 
 	                (A.QUANTITY + ISNULL(B.QUANTITY,0)) AS SUPPLYQUANTITY

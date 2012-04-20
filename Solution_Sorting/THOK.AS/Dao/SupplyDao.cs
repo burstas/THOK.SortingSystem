@@ -248,7 +248,27 @@ namespace THOK.AS.Dao
                 " 	AND A.CHANNELGROUP = '{4}'" +
                 " 	AND B.CHANNELTYPE = '{5}'" +
                 " 	AND B.CHANNELTYPE = '2'" +
-                " )";
+               @" )
+
+                UPDATE AS_SC_SUPPLY SET SORTNO = ORIGINALSORTNO -
+                (
+	                SELECT MIN(ORIGINALSORTNO) FROM AS_SC_SUPPLY A
+	                LEFT JOIN AS_BI_CHANNEL B 
+		                ON A.LINECODE = B.LINECODE AND A.CHANNELCODE = B.CHANNELCODE
+	                WHERE A.ORDERDATE= '{0}' AND A.BATCHNO = '{1}' AND A.LINECODE = '{2}'
+	                AND A.CHANNELGROUP = '{4}'
+	                AND B.CHANNELTYPE = '4' 
+                )
+                WHERE ORDERDATE= '{0}' AND BATCHNO = '{1}' AND LINECODE = '{2}' 
+	                AND  SERIALNO IN
+                (
+	                SELECT SERIALNO FROM AS_SC_SUPPLY A
+	                LEFT JOIN AS_BI_CHANNEL B 
+		                ON A.LINECODE = B.LINECODE AND A.CHANNELCODE = B.CHANNELCODE
+	                WHERE A.ORDERDATE= '{0}' AND A.BATCHNO = '{1}' AND A.LINECODE = '{2}'
+	                AND A.CHANNELGROUP = '{4}'
+	                AND B.CHANNELTYPE = '4' 
+                )";
 
             ExecuteNonQuery(string.Format(sql, orderDate, batchNo, lineCode, aheadCount, channelGroup, channelType));
         }

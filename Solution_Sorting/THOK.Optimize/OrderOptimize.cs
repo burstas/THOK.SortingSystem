@@ -23,7 +23,7 @@ namespace THOK.Optimize
             foreach (DataRow detailRow in orderRows)
             {
                 DataRow[] channelRows = channelTable.Select(string.Format("CHANNELCODE='{0}'", detailRow["CHANNELCODE"]));
-                if (channelRows[0]["CHANNELTYPE"].ToString() == "5")
+                if (channelRows[0]["CHANNELTYPE"].ToString() == "5" || channelRows[0]["CHANNELTYPE"].ToString() == "4")
                 {
                     channelRows[0]["CIGARETTECODE"] = detailRow["CIGARETTECODE"];
                     channelRows[0]["CIGARETTENAME"] = detailRow["CIGARETTENAME"];

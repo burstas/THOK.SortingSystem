@@ -19,14 +19,13 @@ namespace THOK.Optimize
                 int supplyQuantity1 = Convert.ToInt32(row["SUPPLYQUANTITY"])/50;
                 int supplyQuantity2 = Convert.ToInt32(row["PIECE"]);
 
-                if (supplyQuantity1 >= 1 && row["CHANNELTYPE"].ToString() != "5")
+                if (supplyQuantity1 >= 1 && row["CHANNELTYPE"].ToString() != "5" && row["CHANNELTYPE"].ToString() != "4")
                 {
-                    int count = 1;
-                    if (row["CHANNELTYPE"].ToString() == "3")
+                    int count = supplyQuantity1 - (supplyQuantity2 > 0 ? supplyQuantity2 : 0);
+                    if (count <= 0)
                     {
-                        count = supplyQuantity1 - (supplyQuantity2 > 0?supplyQuantity2:0) ;
+                        continue;
                     }
-
                     for (int i = 0; i < count; i++)
                     {
                         DataRow supplyRow = supplyTable.NewRow();

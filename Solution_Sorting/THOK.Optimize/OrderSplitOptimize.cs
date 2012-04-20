@@ -19,9 +19,9 @@ namespace THOK.Optimize
         private bool isOneChannelMoveToMixChannel = false;
         private bool isTwoChannelMoveToMixChannel = false;
         private int moveToMixChannelProductsCount = 0;
+        private bool isMoveLChannelToMixTChannel = false;
         //public IList<string> moveToMixChannelProducts = new List<string>();
-        public IDictionary<string,int> moveToMixChannelProducts = new Dictionary<string,int>();
-        
+        public IDictionary<string,int> moveToMixChannelProducts = new Dictionary<string,int>();        
         
         private bool isCombineOrder = false;
 
@@ -50,7 +50,7 @@ namespace THOK.Optimize
             isOneChannelMoveToMixChannel = Convert.ToBoolean(param["IsOneChannelMoveToMixChannel-" + lineCode]);
             isTwoChannelMoveToMixChannel = Convert.ToBoolean(param["IsTwoChannelMoveToMixChannel-" + lineCode]);
             moveToMixChannelProductsCount = Convert.ToInt32(param["MoveToMixChannelProductsCount-" + lineCode]);
-
+            isMoveLChannelToMixTChannel = Convert.ToBoolean(param["IsMoveLChannelToMixTChannel"]);
             isCombineOrder = Convert.ToBoolean(param["IsCombineOrder"]);
             packerInfo.packMode = Convert.ToInt32(param["PackMode"]);
             packerInfo.splitPackQuantity = Convert.ToInt32(param["SplitPackQuantity"]);
@@ -170,6 +170,8 @@ namespace THOK.Optimize
 
             //调整订单，使当前订单的两条主线，分拣量尽量平均。
             AdjustOrder(groupQuantity, product, lineCode, masterRow, channelTable, tmpDetail);
+            AdjustOrder(groupQuantity,lineCode, masterRow, channelTable, tmpDetail);
+
 
             channelGroupQuantity[0] += groupQuantity[0];
             channelGroupQuantity[1] += groupQuantity[1];
@@ -441,7 +443,7 @@ namespace THOK.Optimize
         
                 
         //调整订单，使当前订单的两条主线，分拣量尽量平均。
-        private void AdjustOrder(int[] groupQuantity, Dictionary<string, int> product, string lineCode, DataRow masterRow, DataTable channelTable, DataTable detailTable)
+        private void AdjustOrder(int[] groupQuantity, Dictionary<string, int> product, string lineCode1, DataRow masterRow, DataTable channelTable, DataTable detailTable)
         {
             //如果一个品牌占两个烟道，则用这些品牌来调整两个组的分拣量，目的是使两个组的分拣量均衡
             foreach (string cigaretteCode in product.Keys)
@@ -528,7 +530,58 @@ namespace THOK.Optimize
                 }
             }
         }
-        
+
+        private void AdjustOrder(int[] groupQuantity, string lineCode, DataRow masterRow, DataTable channelTable, DataTable tmpDetail)
+        {
+            DataTable tmpAddOrderDetail = tmpDetail.Clone();
+            foreach (DataRow  row in tmpDetail.Rows)
+            {
+                string cigaretteCode = Convert.ToString(row["CIGARETTECODE"]);
+                string cigaretteName = Convert.ToString(row["CIGARETTENAME"]);
+                int quantity = Convert.ToInt32(row["QUANTITY"]);
+                int channelGroup = Convert.ToInt32(row["CHANNELGROUP"]);
+                int channelType = Convert.ToInt32(row["CHANNELTYPE"]);
+                DataRow[] channel_t = channelTable.Select(string.Format("STATUS = '1' AND CHANNELCODE='{0}'", Convert.ToString(row["CHANNELCODE"])));
+                DataRow[] mixChannel_t = channelTable.Select(string.Format("STATUS = '1' AND CHANNELTYPE = '4' AND CHANNELGROUP='{0}'", channelGroup == 1 ? 2 : 1), "QUANTITY");
+                int q1 = groupQuantity[channelGroup - 1]  - (groupQuantity[0] + groupQuantity[1]) / 2;
+
+                if (((isMoveLChannelToMixTChannel && channelType == 2) || channelType == 3) && quantity >= 50 && q1 > 25 && mixChannel_t.Length > 0)
+                {
+                    if (q1 < 50)
+                    {
+                        q1 = 50;
+                    }
+
+                    q1 /= 50;
+                    q1 *= 50;
+
+                    if (quantity < q1)
+                    {
+                        q1 = quantity;
+                        q1 /= 50;
+                        q1 *= 50;
+                    }
+
+                    row["QUANTITY"] = quantity - q1;
+                    channel_t[0]["QUANTITY"] = Convert.ToInt32(channel_t[0]["QUANTITY"]) - q1;
+                    groupQuantity[channelGroup - 1] -= q1; 
+
+                    mixChannel_t[0]["CIGARETTECODE"] = cigaretteCode;
+                    mixChannel_t[0]["CIGARETTENAME"] = cigaretteName;
+                    AddDetailRow(masterRow, tmpAddOrderDetail, -1, lineCode, mixChannel_t[0], q1);
+                    mixChannel_t[0]["CIGARETTECODE"] = "";
+                    mixChannel_t[0]["CIGARETTENAME"] = "";
+
+                    channelGroup = Convert.ToInt32(mixChannel_t[0]["CHANNELGROUP"]);
+                    groupQuantity[channelGroup - 1] += q1; 
+                }
+            }
+            foreach (DataRow row in tmpAddOrderDetail.Rows)
+            {
+                tmpDetail.ImportRow(row);
+            }
+            tmpAddOrderDetail = null; 
+        }
 
         //品牌在一条分拣主线上是占用一个烟道还是多个烟道
         private void AdjustChannel(DataRow masterRow, DataTable detailTable, DataTable channelTable, string cigaretteCode, int channelGroup, int quantity)

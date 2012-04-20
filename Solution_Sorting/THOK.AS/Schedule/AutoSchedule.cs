@@ -70,7 +70,7 @@ namespace THOK.AS.Schedule
             try
             {
                 DateTime dtOrder = DateTime.Parse(orderDate);
-                string historyDate = dtOrder.AddDays(-7).ToShortDateString();
+                string historyDate = dtOrder.AddDays(-5).ToShortDateString();
                 using (PersistentManager pm = new PersistentManager())
                 {
                     BatchDao batchDao = new BatchDao();
