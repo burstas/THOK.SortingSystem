@@ -534,6 +534,10 @@ namespace THOK.AS.Schedule
 
                 SysParameterDao parameterDao = new SysParameterDao();
                 Dictionary<string, string> parameter = parameterDao.FindParameters();
+
+                LineInfoDao lineDao1 = new LineInfoDao();
+                DataTable lineTable1 = lineDao1.GetAvailabeLine("3").Tables[0];
+                bool isUseWholePiecesSortLine = lineTable1.Rows.Count > 0;
                 
                 //每天分拣结束后备货烟道是否为空
                 if (parameter["ClearStockChannel"] == "1")
@@ -546,16 +550,23 @@ namespace THOK.AS.Schedule
                 //查询立式机卷烟数量信息表（应加上混合烟道问题）
                 DataTable orderTTable = orderDao.FindCigaretteQuantityFromChannelUsed(orderDate, batchNo, "2");
                 //取所有订单品牌及总数量
-                DataTable orderTable = detailDao.FindAllCigaretteQuantity(orderDate, batchNo,false).Tables[0];
+                DataTable orderTable = detailDao.FindAllCigaretteQuantity(orderDate, batchNo,isUseWholePiecesSortLine).Tables[0];
 
                 StockOptimize stockOptimize = new StockOptimize();
 
                 bool isUseSynchronizeOptimize = Convert.ToBoolean(parameter["IsUseSynchronizeOptimize"]);
-                DataTable mixTable = stockOptimize.Optimize(isUseSynchronizeOptimize, channelTable, isUseSynchronizeOptimize ? orderCTable : orderTable, isUseSynchronizeOptimize ? orderTTable : orderTable, orderDate, batchNo);
-
-                schannelDao.UpdateChannel(channelTable);
-                schannelDao.InsertStockChannelUsed(orderDate, batchNo,channelTable);
+                DataTable mixTable = stockOptimize.Optimize(isUseSynchronizeOptimize, channelTable, isUseSynchronizeOptimize ? orderCTable : orderTable, isUseSynchronizeOptimize ? orderTTable : orderTable, orderDate, batchNo);             
                 schannelDao.InsertMixChannel(mixTable);
+
+                //取整件打码线所有订单品牌及总数量
+                if (isUseWholePiecesSortLine)
+                {
+                    orderTable = detailDao.FindAllCigaretteQuantityForWholePiecesSortLine(orderDate, batchNo).Tables[0];
+                    mixTable = stockOptimize.Optimize(channelTable, orderTable, orderDate, batchNo);
+                    schannelDao.InsertMixChannel(mixTable);
+                }
+
+                schannelDao.InsertStockChannelUsed(orderDate, batchNo, channelTable);                
 
                 if (OnSchedule != null)
                     OnSchedule(this, new ScheduleEventArgs(6, "备货烟道优化", 1, 1));

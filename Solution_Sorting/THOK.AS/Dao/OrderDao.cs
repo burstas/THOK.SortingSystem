@@ -215,6 +215,22 @@ namespace THOK.AS.Dao
             return ExecuteQuery(string.Format(sql, orderDate, batchNo, lineCode));
         }
 
+        internal DataSet FindAllCigaretteQuantityForWholePiecesSortLine(string orderDate, int batchNo)
+        {
+            //排除异型烟
+            string sql = @"SELECT CIGARETTECODE, CIGARETTENAME, SUM(QUANTITY) QUANTITY, SUM(QUANTITY - QUANTITY % 5) QUANTITY5
+                            FROM  (
+                            SELECT ORDERID,CIGARETTECODE, CIGARETTENAME, (SUM(QUANTITY)/50)*50 QUANTITY, SUM(QUANTITY - QUANTITY % 5) QUANTITY5 
+                            FROM AS_I_ORDERDETAIL 
+                            WHERE CIGARETTECODE NOT IN (SELECT CIGARETTECODE FROM AS_BI_CIGARETTE WHERE ISABNORMITY = '1') 
+                            AND ORDERID IN ( SELECT ORDERID FROM AS_I_ORDERMASTER A WHERE A.ORDERDATE='{0}' AND A.BATCHNO = '{1}' )  
+                            GROUP BY ORDERID,CIGARETTECODE, CIGARETTENAME) Q
+                            GROUP BY CIGARETTECODE, CIGARETTENAME
+                            ORDER BY SUM(QUANTITY) DESC";   
+
+            return ExecuteQuery(string.Format(sql, orderDate, batchNo));
+        }
+
         /// <summary>
         /// 备货烟道优化，取卷烟名称及数量，进行优化。[ZENG 2010-11-19]
         /// </summary>
@@ -397,5 +413,6 @@ namespace THOK.AS.Dao
             string sql = string.Format("SELECT * FROM AS_TMP_ORDER WHERE ORDERDATE = '{0}' AND BATCHNO = {1} AND LINECODE = '{2}'", orderDate, batchNo, lineCode);
             return ExecuteQuery(sql).Tables[0];
         }
+
     }
 }
