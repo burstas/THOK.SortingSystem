@@ -21,8 +21,9 @@ namespace THOK.Optimize
         private int moveToMixChannelProductsCount = 0;
         private bool isMoveLChannelToMixTChannel = false;
         //public IList<string> moveToMixChannelProducts = new List<string>();
-        public IDictionary<string,int> moveToMixChannelProducts = new Dictionary<string,int>();        
-        
+        public IDictionary<string,int> moveToMixChannelProducts = new Dictionary<string,int>();
+        public IDictionary<string, int> moveToMixTChannelProducts = new Dictionary<string, int>();
+
         private bool isCombineOrder = false;
 
         public class PackerInfo
@@ -281,6 +282,7 @@ namespace THOK.Optimize
                         else
                         {
                             int channelQuantityTotal = Convert.ToInt32(channelTable.Compute("SUM(QUANTITY)", string.Format("STATUS = '1' AND CIGARETTECODE='{0}'", cigaretteCode)));
+                            channelQuantityTotal += moveToMixTChannelProducts.ContainsKey(cigaretteCode) ? moveToMixTChannelProducts[cigaretteCode] : 0;
                             channelQuantityTotal += moveToMixChannelProducts.ContainsKey(cigaretteCode) ? moveToMixChannelProducts[cigaretteCode] : 0;
                             bool isLastNoMove = Convert.ToInt32(channelRows[0]["GROUPNO"]) - channelQuantityTotal - quantity2 <= noMoveTixChannelQuantity;
                             if (isLastNoMove)
@@ -341,6 +343,7 @@ namespace THOK.Optimize
             }
 
             int channelQuantityTotal = Convert.ToInt32(channelTable.Compute("SUM(QUANTITY)", string.Format("STATUS = '1' AND CIGARETTECODE='{0}'", cigaretteCode)));
+            channelQuantityTotal += moveToMixTChannelProducts.ContainsKey(cigaretteCode) ? moveToMixTChannelProducts[cigaretteCode] : 0;
             int OrderQuantityTotal = quantity;
             if (channelQuantityTotal + OrderQuantityTotal > Convert.ToInt32(channelRows[0]["GROUPNO"]) / 50 * 50 - 50 * channelRows.Length)
             {
@@ -360,6 +363,7 @@ namespace THOK.Optimize
                 }
 
                 channelQuantityTotal = Convert.ToInt32(channelTable.Compute("SUM(QUANTITY)", string.Format("STATUS = '1' AND CIGARETTECODE='{0}'", cigaretteCode)));
+                channelQuantityTotal += moveToMixTChannelProducts.ContainsKey(cigaretteCode) ? moveToMixTChannelProducts[cigaretteCode] : 0;
                 //循环将非整烟道补整；
                 while (OrderQuantityTotal > 0 && Convert.ToInt32(channelRows[0]["GROUPNO"]) - channelQuantityTotal >= 50)
                 {
@@ -371,6 +375,7 @@ namespace THOK.Optimize
                     groupQuantity[channelGroup2 - 1] += temp1;
 
                     channelQuantityTotal = Convert.ToInt32(channelTable.Compute("SUM(QUANTITY)", string.Format("STATUS = '1' AND CIGARETTECODE='{0}'", cigaretteCode)));
+                    channelQuantityTotal += moveToMixTChannelProducts.ContainsKey(cigaretteCode) ? moveToMixTChannelProducts[cigaretteCode] : 0;
                 }
 
                 //移仓到立式空仓烟道
@@ -573,7 +578,14 @@ namespace THOK.Optimize
                     mixChannel_t[0]["CIGARETTENAME"] = "";
 
                     channelGroup = Convert.ToInt32(mixChannel_t[0]["CHANNELGROUP"]);
-                    groupQuantity[channelGroup - 1] += q1; 
+                    groupQuantity[channelGroup - 1] += q1;
+
+                    if (!moveToMixTChannelProducts.ContainsKey(cigaretteCode))
+                    {
+                        moveToMixTChannelProducts.Add(cigaretteCode, 0);
+                    }
+
+                    moveToMixTChannelProducts[cigaretteCode] += q1;
                 }
             }
             foreach (DataRow row in tmpAddOrderDetail.Rows)
