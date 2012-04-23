@@ -413,7 +413,7 @@ namespace THOK.AS.Dao
         }
 
         //异形分拣打码
-        public DataTable FindOrderForAbnormity(string orderDate, int batchNo, string abnormitySortLineCode)
+        public DataTable FindOrderForAbnormity(string orderDate, int batchNo, string abnormitySortLineCode,bool isSortAbnormityOrderByOrder)
         {
             //按订单打
             string sql = "SELECT ROW_NUMBER() OVER (ORDER BY D.SORTID,C.SORTID,A.ORDERID ,B.CIGARETTECODE) AS SORTNO, " +
@@ -439,7 +439,9 @@ namespace THOK.AS.Dao
                             " WHERE A.ORDERDATE='{1}' AND A.BATCHNO='{2}' AND B.QUANTITY IS NOT NULL AND E.ISABNORMITY = '1'" +
                             " ORDER BY LINECODE,SORTNO,CIGARETTECODE";
             //按品牌打
-            sql = @"SELECT ROW_NUMBER() OVER (ORDER BY B.CIGARETTECODE,D.SORTID,C.SORTID) AS SORTNO,   
+            if (!isSortAbnormityOrderByOrder)
+            {
+                sql = @"SELECT ROW_NUMBER() OVER (ORDER BY B.CIGARETTECODE,D.SORTID,C.SORTID) AS SORTNO,   
                       A.ORDERID,C.N_CUST_CODE,C.CUSTOMERNAME,  
                       B.CIGARETTECODE,B.CIGARETTENAME,B.QUANTITY,   
                       ISNULL(Z.BATCHNO_ONEPRO,Z.BATCHNO) BATCHNO,  
@@ -461,6 +463,7 @@ namespace THOK.AS.Dao
                       ON B.CIGARETTECODE = E.CIGARETTECODE  
                       WHERE A.ORDERDATE='{1}' AND A.BATCHNO='{2}' AND B.QUANTITY IS NOT NULL AND E.ISABNORMITY = '1'  
                       ORDER BY SORTNO,CIGARETTECODE,LINECODE";
+            }
 
             return ExecuteQuery(string.Format(sql, abnormitySortLineCode, orderDate, batchNo)).Tables[0];
         }
