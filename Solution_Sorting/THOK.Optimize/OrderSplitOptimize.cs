@@ -241,10 +241,13 @@ namespace THOK.Optimize
                 return false;
             }
 
+            int channelQuantityTotal = Convert.ToInt32(channelTable.Compute("SUM(QUANTITY)", string.Format("STATUS = '1' AND CIGARETTECODE='{0}'", cigaretteCode)));
+            channelQuantityTotal += moveToMixTChannelProducts.ContainsKey(cigaretteCode) ? moveToMixTChannelProducts[cigaretteCode] : 0;
+
             //判断是否为通道机，且已进入尾数折单优化，如果是则进入移仓算法；
-            if (channelRows[0]["CHANNELTYPE"].ToString() == "3" && Convert.ToInt32(channelRows[0]["QUANTITY"]) + quantity > Convert.ToInt32(channelRows[0]["GROUPNO"]) / 50 * 50)
+            if (channelRows[0]["CHANNELTYPE"].ToString() == "3" && channelQuantityTotal + quantity > Convert.ToInt32(channelRows[0]["GROUPNO"]) / 50 * 50)
             {
-                int quantity1 = Convert.ToInt32(channelRows[0]["GROUPNO"]) / 50 * 50 - Convert.ToInt32(channelRows[0]["QUANTITY"]);
+                int quantity1 = Convert.ToInt32(channelRows[0]["GROUPNO"]) / 50 * 50 - channelQuantityTotal;
                 if (quantity1 < 0)
                 {
                     return false;
@@ -281,9 +284,10 @@ namespace THOK.Optimize
                         }
                         else
                         {
-                            int channelQuantityTotal = Convert.ToInt32(channelTable.Compute("SUM(QUANTITY)", string.Format("STATUS = '1' AND CIGARETTECODE='{0}'", cigaretteCode)));
+                            channelQuantityTotal = Convert.ToInt32(channelTable.Compute("SUM(QUANTITY)", string.Format("STATUS = '1' AND CIGARETTECODE='{0}'", cigaretteCode)));
                             channelQuantityTotal += moveToMixTChannelProducts.ContainsKey(cigaretteCode) ? moveToMixTChannelProducts[cigaretteCode] : 0;
                             channelQuantityTotal += moveToMixChannelProducts.ContainsKey(cigaretteCode) ? moveToMixChannelProducts[cigaretteCode] : 0;
+
                             bool isLastNoMove = Convert.ToInt32(channelRows[0]["GROUPNO"]) - channelQuantityTotal - quantity2 <= noMoveTixChannelQuantity;
                             if (isLastNoMove)
                             {

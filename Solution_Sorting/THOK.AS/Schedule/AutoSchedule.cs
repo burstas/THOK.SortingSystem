@@ -409,6 +409,7 @@ namespace THOK.AS.Schedule
                     int currentCount = 0;
                     int totalCount = masterTable.Rows.Count;
                     orderSchedule.moveToMixChannelProducts.Clear();
+                    orderSchedule.moveToMixTChannelProducts.Clear();
 
                     foreach (DataRow masterRow in masterTable.Rows)
                     {
