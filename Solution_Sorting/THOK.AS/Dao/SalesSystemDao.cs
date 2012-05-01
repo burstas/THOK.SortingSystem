@@ -168,7 +168,7 @@ namespace THOK.AS.Dao
                 case "ncyc-db2":
                     sql = @"SELECT A.CUSTOMERCODE, A.CUSTOMERNAME, A.ROUTECODE, " +
                             " B.AREACODE AS AREACODE,A.LICENSENO,A.SORTID, A.TELNO," +
-                            " A.ADDRESS,A.LICENSENO AS N_CUST_CODE  FROM OUKANG.OUKANG_CUST A " +
+                            " A.ADDRESS,A.CUSTOMERCODE AS N_CUST_CODE  FROM OUKANG.OUKANG_CUST A " +
                             " LEFT JOIN OUKANG.OUKANG_RUT B ON A.ROUTECODE = B.ROUTECODE";
                     break;
                 default:
