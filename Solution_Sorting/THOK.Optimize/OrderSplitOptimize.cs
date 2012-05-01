@@ -763,7 +763,7 @@ namespace THOK.Optimize
 
                 masterRow["PACKORDERNO"] = orderNo;
 
-                DataRow[] orderRows = tmpTable.Select(string.Format("CHANNELGROUP={0} AND QUANTITY > 0", channelGroup),string.Format("CHANNELTYPE {0},QUANTITY DESC,CHANNELORDER DESC",sort));
+                DataRow[] orderRows = tmpTable.Select(string.Format("CHANNELGROUP={0} AND QUANTITY > 0", channelGroup), string.Format("CHANNELTYPE {0},CIGARETTECODE,CHANNELCODE", sort));
                 foreach (DataRow orderRow in orderRows)
                 {
                     int orderQuantity = Convert.ToInt32(orderRow["QUANTITY"]);

@@ -108,5 +108,22 @@ namespace THOK.Optimize
 
             return table;
         }
+
+        public void Optimize(DataTable supplyOrderTable, int p)
+        {
+            int i = 0;
+            DataRow[] supplyOrderRows = supplyOrderTable.Select(string.Format("CHANNELGROUP = '{0}'",p), "SORTNO DESC");
+            foreach (DataRow supplyOrderRow in supplyOrderRows)
+            {
+                if (i + 3 < supplyOrderRows.Length)
+                {
+                    supplyOrderRow["SORTNO"] = supplyOrderRows[i + 3]["SORTNO"];
+                }
+                else
+                    supplyOrderRow["SORTNO"] = 0;
+                i++;
+
+            }
+        }
     }
 }

@@ -272,5 +272,33 @@ namespace THOK.AS.Dao
 
             ExecuteNonQuery(string.Format(sql, orderDate, batchNo, lineCode, aheadCount, channelGroup, channelType));
         }
+
+        internal DataTable FindSupplyOrder(string orderDate, int batchNo, string lineCode)
+        {
+            string sql = @"SELECT A.*,B.CHANNELGROUP FROM AS_SC_SUPPLY A
+                            LEFT JOIN AS_SC_CHANNELUSED B
+	                            ON A.ORDERDATE = B.ORDERDATE
+	                            AND A.BATCHNO = B.BATCHNO
+	                            AND A.LINECODE = B.LINECODE
+	                            AND A.CHANNELCODE = B.CHANNELCODE
+                            WHERE B.CHANNELTYPE = 4
+                                AND A.ORDERDATE = '{0}' AND A.BATCHNO = '{1}' 
+                                AND A.LINECODE = '{2}'";
+            return ExecuteQuery(string.Format(sql, orderDate, batchNo, lineCode)).Tables[0];
+        }
+
+        internal void Update(DataTable supplyOrderTable)
+        {
+            foreach (DataRow row in supplyOrderTable.Rows)
+            {
+                string sql = @"UPDATE AS_SC_SUPPLY SET SORTNO = '{0}' 
+                                WHERE ORDERDATE = '{1}' 
+                                    AND BATCHNO = '{2}' 
+                                    AND LINECODE = '{3}'
+                                    AND SERIALNO = '{4}'";
+                sql = string.Format(sql, row["SORTNO"], row["ORDERDATE"], row["BATCHNO"], row["LINECODE"], row["SERIALNO"]);
+                ExecuteNonQuery(sql);
+            }
+        }
     }
 }

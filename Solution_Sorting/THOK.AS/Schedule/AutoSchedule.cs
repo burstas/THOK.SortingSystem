@@ -245,12 +245,10 @@ namespace THOK.AS.Schedule
             {
                 ClearSchedule(orderDate, batchNo);
                 if (OnSchedule != null)
-                    OnSchedule(this, new ScheduleEventArgs(OptimizeStatus.ERROR,"[" + e.TargetSite + "]\n" + e.Message));
+                    OnSchedule(this, new ScheduleEventArgs(OptimizeStatus.ERROR,"[" + e.TargetSite + "]\n" + e.Message + e.StackTrace));
             }
         }
-
-
-
+        
         #region  优化方法
 
         /// <summary>
@@ -601,29 +599,14 @@ namespace THOK.AS.Schedule
                 {
                     string lineCode = lineRow["LINECODE"].ToString();
 
-                    int channelGroup = 1;
-                    int channelType = 2;
-                    int aheadCount = Convert.ToInt32(parameter[string.Format("SupplyAheadCount-{0}-{1}-{2}",lineCode,channelGroup,channelType)]);                   
-                    supplyDao.AdjustSortNo(orderDate, batchNo, lineCode, channelGroup, channelType, aheadCount);
-
-                    channelGroup = 1;
-                    channelType = 3;
-                    aheadCount = Convert.ToInt32(parameter[string.Format("SupplyAheadCount-{0}-{1}-{2}", lineCode, channelGroup, channelType)]);   
-                    supplyDao.AdjustSortNo(orderDate, batchNo, lineCode, channelGroup, channelType, aheadCount);
-
-                    channelGroup = 2;
-                    channelType = 2;
-                    aheadCount = Convert.ToInt32(parameter[string.Format("SupplyAheadCount-{0}-{1}-{2}", lineCode, channelGroup, channelType)]);       
-                    supplyDao.AdjustSortNo(orderDate, batchNo, lineCode, channelGroup, channelType, aheadCount);
-
-                    channelGroup = 2;
-                    channelType = 3;
-                    aheadCount = Convert.ToInt32(parameter[string.Format("SupplyAheadCount-{0}-{1}-{2}", lineCode, channelGroup, channelType)]);      
-                    supplyDao.AdjustSortNo(orderDate, batchNo, lineCode, channelGroup, channelType, aheadCount);
-
                     DataTable channelTable = channelDao.FindChannelSchedule(orderDate, batchNo, lineCode, Convert.ToInt32(parameter["RemainCount"])).Tables[0];
                     DataTable supplyTable = supplyOptimize.Optimize(channelTable);
                     supplyDao.InsertSupply(supplyTable, Convert.ToBoolean(parameter["IsSupplyOrderbyCigaretteCode"]));
+
+                    DataTable supplyOrderTable = supplyDao.FindSupplyOrder(orderDate, batchNo, lineCode);
+                    supplyOptimize.Optimize(supplyOrderTable, 1);
+                    supplyOptimize.Optimize(supplyOrderTable, 2);
+                    supplyDao.Update(supplyOrderTable);
 
                     if (OnSchedule != null)
                         OnSchedule(this, new ScheduleEventArgs(7, "正在优化" + lineRow["LINECODE"].ToString() + "补货计划", currentCount++, totalCount));
