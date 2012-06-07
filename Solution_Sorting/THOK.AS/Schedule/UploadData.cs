@@ -160,17 +160,28 @@ namespace THOK.AS.Schedule
                 string cigaretteCode = "";
                 foreach (DataRow row in table.Rows)
                 {
-                    if (cigaretteCode != row[4].ToString().Trim())
+                    string s = string.Empty;
+                    if (isSortAbnormityOrderByOrder)
                     {
-                        index_cigarette++;
-                        cigaretteCode = row[4].ToString().Trim();
+                        s = row["SORTNO"].ToString();
+                        for (int i = 1; i < columnCount; i++)
+                            s += ("," + row[i].ToString().Trim());
+                        s += ";";
                     }
-                    string s = row["SORTNO"].ToString();
-                    s += ("," + index_cigarette.ToString());
+                    else
+                    {
+                        if (cigaretteCode != row[4].ToString().Trim())
+                        {
+                            index_cigarette++;
+                            cigaretteCode = row[4].ToString().Trim();
+                        }
+                        s = row["SORTNO"].ToString();
+                        s += ("," + index_cigarette.ToString());
 
-                    for (int i = 2; i < columnCount; i++)
-                        s += ("," + row[i].ToString().Trim());
-                    s += ";";
+                        for (int i = 2; i < columnCount; i++)
+                            s += ("," + row[i].ToString().Trim());
+                        s += ";";
+                    }
                     writer.WriteLine(s);
                     writer.Flush();
                 }
